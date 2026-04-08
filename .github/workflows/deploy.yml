@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Add permissions section for GitHub token
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+        
+    - name: Install Dependencies
+      run: |
+        cd frontend
+        npm ci
+        
+    - name: Build
+      run: |
+        cd frontend
+        npm run build
+        # Create .nojekyll file to bypass Jekyll processing
+        touch build/.nojekyll
+        # Create 404.html file to handle SPA routing
+        cp build/index.html build/404.html
+      env:
+        CI: false
+        REACT_APP_API_URL: https://mindflex-backend.onrender.com
+        
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: frontend/build
+        branch: gh-pages 

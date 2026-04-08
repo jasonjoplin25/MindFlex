@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindFlex API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #3b82f6;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        pre {
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+            margin-top: 10px;
+        }
+        .result {
+            margin-top: 20px;
+        }
+        .success {
+            color: #16a34a;
+        }
+        .error {
+            color: #dc2626;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+        }
+        input, select {
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .url-display {
+            font-family: monospace;
+            padding: 10px;
+            background-color: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>MindFlex API Test Page</h1>
+    <p>Use this page to test connectivity with the MindFlex backend API.</p>
+    
+    <div class="test-section">
+        <h2>1. Environment Information</h2>
+        <div>
+            <p><strong>Current Location:</strong> <span id="current-location"></span></p>
+            <p><strong>Default API URL:</strong> <span id="api-url">https://mindflex-backend.onrender.com/api</span></p>
+        </div>
+        <div>
+            <label for="custom-api-url">Custom API URL:</label>
+            <input type="text" id="custom-api-url" style="width: 400px;" placeholder="Enter custom API URL if needed">
+            <button onclick="updateApiUrl()">Update API URL</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Test Health Endpoint</h2>
+        <p>This will test the <code>/health</code> endpoint to verify basic connectivity.</p>
+        <button onclick="testHealthEndpoint()">Test Health Endpoint</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Test Games Endpoint</h2>
+        <p>This will test the <code>/games</code> endpoint to verify API functionality.</p>
+        <button onclick="testGamesEndpoint()">Test Games Endpoint</button>
+        <div id="games-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Test Custom Endpoint</h2>
+        <p>Enter a custom endpoint to test (e.g., <code>/auth/register</code>)</p>
+        <div>
+            <div class="url-display">
+                <span id="display-api-url">https://mindflex-backend.onrender.com/api</span>/<span id="endpoint-display">health</span>
+            </div>
+            <input type="text" id="custom-endpoint" placeholder="Endpoint path (without leading slash)">
+            <select id="request-method">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+            <div>
+                <textarea id="request-body" placeholder="Request body (JSON)" rows="4" style="width: 100%; margin-top: 10px;"></textarea>
+            </div>
+            <button onclick="testCustomEndpoint()">Test Custom Endpoint</button>
+        </div>
+        <div id="custom-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. CORS Test</h2>
+        <p>This will test if the API properly handles CORS requests from this origin.</p>
+        <button onclick="testCORS()">Test CORS</button>
+        <div id="cors-result" class="result"></div>
+    </div>
+
+    <script>
+        // Initialize variables
+        let apiUrl = 'https://mindflex-backend.onrender.com/api';
+        
+        // Display current location
+        document.getElementById('current-location').textContent = window.location.origin;
+        
+        // Update the display when custom endpoint changes
+        document.getElementById('custom-endpoint').addEventListener('input', function() {
+            document.getElementById('endpoint-display').textContent = this.value || 'health';
+        });
+        
+        // Function to update API URL
+        function updateApiUrl() {
+            const customApiUrl = document.getElementById('custom-api-url').value;
+            if (customApiUrl) {
+                apiUrl = customApiUrl;
+                document.getElementById('api-url').textContent = apiUrl;
+                document.getElementById('display-api-url').textContent = apiUrl;
+            } else {
+                apiUrl = 'https://mindflex-backend.onrender.com/api';
+                document.getElementById('api-url').textContent = apiUrl;
+                document.getElementById('display-api-url').textContent = apiUrl;
+            }
+        }
+        
+        // Test health endpoint
+        async function testHealthEndpoint() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '<p>Testing health endpoint...</p>';
+            
+            try {
+                const response = await fetch(`${apiUrl}/health`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Connection successful (${response.status})</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Connection failed</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        // Test games endpoint
+        async function testGamesEndpoint() {
+            const resultDiv = document.getElementById('games-result');
+            resultDiv.innerHTML = '<p>Testing games endpoint...</p>';
+            
+            try {
+                const response = await fetch(`${apiUrl}/games`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Connection successful (${response.status})</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Connection failed</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        // Test custom endpoint
+        async function testCustomEndpoint() {
+            const resultDiv = document.getElementById('custom-result');
+            resultDiv.innerHTML = '<p>Testing custom endpoint...</p>';
+            
+            const endpoint = document.getElementById('custom-endpoint').value || 'health';
+            const method = document.getElementById('request-method').value;
+            const requestBody = document.getElementById('request-body').value;
+            
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (method !== 'GET' && requestBody) {
+                    try {
+                        options.body = JSON.stringify(JSON.parse(requestBody));
+                    } catch (e) {
+                        resultDiv.innerHTML = `
+                            <p class="error">❌ Invalid JSON in request body</p>
+                            <pre>${e.message}</pre>
+                        `;
+                        return;
+                    }
+                }
+                
+                const response = await fetch(`${apiUrl}/${endpoint}`, options);
+                const contentType = response.headers.get('content-type');
+                
+                let data;
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Connection successful (${response.status})</p>
+                    <pre>${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Connection failed</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        // Test CORS
+        async function testCORS() {
+            const resultDiv = document.getElementById('cors-result');
+            resultDiv.innerHTML = '<p>Testing CORS...</p>';
+            
+            try {
+                const response = await fetch(`${apiUrl}/health`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('access-control-allow-origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('access-control-allow-methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('access-control-allow-headers')
+                };
+                
+                const corsOk = corsHeaders['Access-Control-Allow-Origin'] && 
+                               (corsHeaders['Access-Control-Allow-Origin'] === '*' || 
+                                corsHeaders['Access-Control-Allow-Origin'] === window.location.origin);
+                
+                if (corsOk) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ CORS is properly configured</p>
+                        <pre>${JSON.stringify(corsHeaders, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ CORS might not be properly configured</p>
+                        <pre>${JSON.stringify(corsHeaders, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ CORS test failed</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAC Communication Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse-grow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .scanning-highlight {
+            animation: pulse-grow 1s infinite;
+            outline: 4px solid #3B82F6;
+            outline-offset: 2px;
+        }
+
+        .symbol-button {
+            transition: all 0.2s ease;
+        }
+
+        .symbol-button:active {
+            transform: scale(0.95);
+        }
+
+        .symbol-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .dark .bg-white {
+            background-color: #1f2937;
+        }
+
+        .dark .bg-gray-50 {
+            background-color: #111827;
+        }
+
+        .dark .bg-gray-100 {
+            background-color: #1f2937;
+        }
+
+        .dark .text-gray-900 {
+            color: #f3f4f6;
+        }
+
+        .dark .text-gray-700 {
+            color: #d1d5db;
+        }
+
+        .dark .text-gray-600 {
+            color: #9ca3af;
+        }
+
+        .dark .border-gray-300 {
+            border-color: #374151;
+        }
+
+        .completed-task {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors">
+    <!-- Main App Container -->
+    <div id="app" class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+            <div class="px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-comments text-3xl text-[#5D5CDE]"></i>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">AAC Assistant</h1>
+                </div>
+                <div class="flex items-center space-x-2 flex-wrap">
+                    <select id="languageSelect" class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white" title="Language">
+                        <option value="en">🇺🇸 English</option>
+                        <option value="zh">🇨🇳 中文</option>
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="hi">🇮🇳 हिन्दी</option>
+                        <option value="ar">🇸🇦 العربية</option>
+                        <option value="pt">🇧🇷 Português</option>
+                        <option value="ru">🇷🇺 Русский</option>
+                        <option value="ja">🇯🇵 日本語</option>
+                        <option value="de">🇩🇪 Deutsch</option>
+                        <option value="fr">🇫🇷 Français</option>
+                        <option value="ko">🇰🇷 한국어</option>
+                        <option value="id">🇮🇩 Indonesia</option>
+                        <option value="it">🇮🇹 Italiano</option>
+                        <option value="tr">🇹🇷 Türkçe</option>
+                        <option value="vi">🇻🇳 Tiếng Việt</option>
+                    </select>
+                    <select id="userProfileSelect" class="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white">
+                        <option value="">Select Profile</option>
+                    </select>
+                    <button id="emergencyBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold text-sm">
+                        <i class="fas fa-exclamation-triangle"></i> HELP
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex border-t border-gray-200 dark:border-gray-700 overflow-x-auto">
+                <button class="nav-tab flex-1 px-4 py-3 text-base font-medium border-b-2 border-[#5D5CDE] text-[#5D5CDE]" data-tab="communicate">
+                    <i class="fas fa-comment-dots"></i> Communicate
+                </button>
+                <button class="nav-tab flex-1 px-4 py-3 text-base font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="schedule">
+                    <i class="fas fa-calendar-check"></i> Schedule
+                </button>
+                <button class="nav-tab flex-1 px-4 py-3 text-base font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="choices">
+                    <i class="fas fa-hand-pointer"></i> Choices
+                </button>
+                <button class="nav-tab flex-1 px-4 py-3 text-base font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="learn">
+                    <i class="fas fa-gamepad"></i> Learn
+                </button>
+                <button class="nav-tab flex-1 px-4 py-3 text-base font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-tab="settings">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="p-4">
+            <!-- Communication Tab -->
+            <div id="communicate-tab" class="tab-content">
+                <!-- Message Display Area -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Message</h2>
+                        <div class="flex space-x-2">
+                            <button id="clearMessageBtn" class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                            <button id="speakBtn" class="px-4 py-2 bg-[#5D5CDE] text-white rounded-lg hover:bg-[#4a4bc5] font-semibold">
+                                <i class="fas fa-volume-up"></i> Speak
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="messageArea"
+                        class="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-xl resize-none bg-gray-50 dark:bg-gray-700 dark:text-white text-base"
+                        rows="3"
+                        placeholder="Tap symbols or type your message..."></textarea>
+
+                    <!-- Word Prediction Bar -->
+                    <div id="predictionBar" class="mt-3 flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Quick Phrases -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-4">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Quick Phrases</h3>
+                    <div id="quickPhrasesContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2"></div>
+                </div>
+
+                <!-- Symbol Pages Navigation -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Communication Board</h3>
+                        <select id="pageSelect" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-base bg-white dark:bg-gray-700 dark:text-white">
+                            <option value="main">Main</option>
+                        </select>
+                    </div>
+
+                    <!-- Symbol Grid -->
+                    <div id="symbolGrid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
+                </div>
+            </div>
+
+            <!-- Schedule Tab -->
+            <div id="schedule-tab" class="tab-content hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Daily Schedule</h2>
+                        <button id="addScheduleItemBtn" class="px-4 py-2 bg-[#5D5CDE] text-white rounded-lg hover:bg-[#4a4bc5]">
+                            <i class="fas fa-plus"></i> Add Task
+                        </button>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            <span>Progress</span>
+                            <span id="scheduleProgress">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                            <div id="scheduleProgressBar" class="progress-bar bg-green-500 h-3 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="scheduleContainer" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Choices Tab -->
+            <div id="choices-tab" class="tab-content hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Make a Choice</h2>
+                    <div id="choicesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    <button id="customChoiceBtn" class="mt-4 w-full px-4 py-3 bg-[#5D5CDE] text-white rounded-lg hover:bg-[#4a4bc5]">
+                        <i class="fas fa-plus"></i> Create Custom Choice
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learn Tab (Gamification) -->
+            <div id="learn-tab" class="tab-content hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Learning Games</h2>
+
+                    <!-- Points Display -->
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-4 mb-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm opacity-90">Total Points</p>
+                                <p class="text-3xl font-bold" id="totalPoints">0</p>
+                            </div>
+                            <div class="text-6xl">🏆</div>
+                        </div>
+                    </div>
+
+                    <!-- Games Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-[#5D5CDE] cursor-pointer" id="matchGameCard">
+                            <div class="text-4xl mb-2">🎯</div>
+                            <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Symbol Match</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Match symbols to their meanings</p>
+                        </div>
+
+                        <div class="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-[#5D5CDE] cursor-pointer" id="feelingsGameCard">
+                            <div class="text-4xl mb-2">😊</div>
+                            <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Feelings Quiz</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Identify different emotions</p>
+                        </div>
+                    </div>
+
+                    <!-- Game Area -->
+                    <div id="gameArea" class="mt-6 hidden">
+                        <div class="bg-blue-50 dark:bg-gray-700 rounded-lg p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-white" id="gameTitle">Game</h3>
+                                <button id="closeGameBtn" class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600">Close</button>
+                            </div>
+                            <div id="gameContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content hidden">
+                <div class="space-y-4">
+                    <!-- User Profiles Management -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+                        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">User Profiles</h2>
+                        <div id="profilesContainer" class="space-y-2 mb-4"></div>
+                        <button id="addProfileBtn" class="w-full px-4 py-2 bg-[#5D5CDE] text-white rounded-lg hover:bg-[#4a4bc5]">
+                            <i class="fas fa-user-plus"></i> Add New Profile
+                        </button>
+                    </div>
+
+                    <!-- Accessibility Settings -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+                        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Accessibility</h2>
+
+                        <div class="space-y-4">
+                            <!-- Switch Scanning -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-gray-700 dark:text-gray-300">Switch Scanning Mode</label>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="switchScanningToggle" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+
+                            <!-- Dwell Time -->
+                            <div>
+                                <label class="text-gray-700 dark:text-gray-300 block mb-2">Dwell Time: <span id="dwellTimeValue">2.0</span>s</label>
+                                <input type="range" id="dwellTimeSlider" min="0.5" max="5" step="0.1" value="2.0" class="w-full">
+                            </div>
+
+                            <!-- Symbol Size -->
+                            <div>
+                                <label class="text-gray-700 dark:text-gray-300 block mb-2">Symbol Size</label>
+                                <select id="symbolSizeSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-base bg-white dark:bg-gray-700 dark:text-white">
+                                    <option value="small">Small</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="large">Large</option>
+                                    <option value="xlarge">Extra Large</option>
+                                </select>
+                            </div>
+
+                            <!-- Voice Speed -->
+                            <div>
+                                <label class="text-gray-700 dark:text-gray-300 block mb-2">Voice Speed: <span id="voiceSpeedValue">1.0</span>x</label>
+                                <input type="range" id="voiceSpeedSlider" min="0.5" max="2" step="0.1" value="1.0" class="w-full">
+                            </div>
+
+                            <!-- Voice Selection -->
+                            <div>
+                                <label class="text-gray-700 dark:text-gray-300 block mb-2">Voice Selection</label>
+                                <select id="voiceSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-base bg-white dark:bg-gray-700 dark:text-white">
+                                    <option value="">Loading voices...</option>
+                                </select>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Choose a soothing voice for text-to-speech</p>
+                            </div>
+
+                            <!-- Voice Pitch -->
+                            <div>
+                                <label class="text-gray-700 dark:text-gray-300 block mb-2">Voice Pitch: <span id="voicePitchValue">1.0</span></label>
+                                <input type="range" id="voicePitchSlider" min="0.5" max="2" step="0.1" value="1.0" class="w-full">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customization -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+                        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Customization</h2>
+
+                        <div class="space-y-3">
+                            <button id="customizeSymbolsBtn" class="w-full px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-left">
+                                <i class="fas fa-icons"></i> Customize Symbols & Pages
+                            </button>
+                            <button id="customizePhrasesBtn" class="w-full px-4 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 text-left">
+                                <i class="fas fa-comment-medical"></i> Customize Quick Phrases
+                            </button>
+                            <button id="remindersBtn" class="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-left">
+                                <i class="fas fa-bell"></i> Set Reminders
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Data Management -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+                        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Data & Analytics</h2>
+
+                        <div class="mb-4 p-4 bg-blue-50 dark:bg-gray-700 rounded-lg">
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Usage Statistics</h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p class="text-gray-600 dark:text-gray-400">Total Messages</p>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalMessages">0</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-600 dark:text-gray-400">Most Used Symbol</p>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="mostUsedSymbol">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <button id="viewAnalyticsBtn" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                <i class="fas fa-chart-bar"></i> View Detailed Analytics
+                            </button>
+                            <button id="exportDataBtn" class="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                            <button id="backupBtn" class="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                                <i class="fas fa-cloud-upload-alt"></i> Backup to Cloud
+                            </button>
+                            <button id="restoreBtn" class="w-full px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600">
+                                <i class="fas fa-cloud-download-alt"></i> Restore from Backup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom Modal (replaces alert/confirm) -->
+    <div id="customModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 fade-in">
+            <div class="p-6">
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-900 dark:text-white mb-4"></h3>
+                <div id="modalContent" class="text-gray-700 dark:text-gray-300 mb-6"></div>
+                <div id="modalButtons" class="flex justify-end space-x-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // DATA STRUCTURES & STATE MANAGEMENT
+        // ============================================
+
+        const appState = {
+            currentProfile: null,
+            currentPage: 'main',
+            message: '',
+            scanningEnabled: false,
+            dwellTime: 2.0,
+            voiceSpeed: 1.0,
+            voicePitch: 1.0,
+            symbolSize: 'medium',
+            scanningIndex: 0,
+            scanningInterval: null,
+            usageLog: [],
+            gamePoints: 0,
+            selectedVoice: null,
+            selectedLanguage: 'en',
+            availableVoices: []
+        };
+
+        // Language translations
+        const translations = {
+            en: { lang: 'en-US', help: 'I need help right now!', greeting: 'Hello', goodJob: 'Great job!' },
+            zh: { lang: 'zh-CN', help: '我现在需要帮助！', greeting: '你好', goodJob: '做得好！' },
+            es: { lang: 'es-ES', help: '¡Necesito ayuda ahora mismo!', greeting: 'Hola', goodJob: '¡Buen trabajo!' },
+            hi: { lang: 'hi-IN', help: 'मुझे अभी मदद चाहिए!', greeting: 'नमस्ते', goodJob: 'बहुत अच्छा!' },
+            ar: { lang: 'ar-SA', help: 'أحتاج المساعدة الآن!', greeting: 'مرحبا', goodJob: 'أحسنت!' },
+            pt: { lang: 'pt-BR', help: 'Preciso de ajuda agora!', greeting: 'Olá', goodJob: 'Bom trabalho!' },
+            ru: { lang: 'ru-RU', help: 'Мне нужна помощь прямо сейчас!', greeting: 'Привет', goodJob: 'Отличная работа!' },
+            ja: { lang: 'ja-JP', help: '今すぐ助けが必要です！', greeting: 'こんにちは', goodJob: 'よくできました!' },
+            de: { lang: 'de-DE', help: 'Ich brauche jetzt Hilfe!', greeting: 'Hallo', goodJob: 'Gut gemacht!' },
+            fr: { lang: 'fr-FR', help: "J'ai besoin d'aide maintenant!", greeting: 'Bonjour', goodJob: 'Bon travail!' },
+            ko: { lang: 'ko-KR', help: '지금 도움이 필요해요!', greeting: '안녕하세요', goodJob: '잘했어요!' },
+            id: { lang: 'id-ID', help: 'Saya butuh bantuan sekarang!', greeting: 'Halo', goodJob: 'Bagus sekali!' },
+            it: { lang: 'it-IT', help: 'Ho bisogno di aiuto adesso!', greeting: 'Ciao', goodJob: 'Ottimo lavoro!' },
+            tr: { lang: 'tr-TR', help: 'Hemen yardıma ihtiyacım var!', greeting: 'Merhaba', goodJob: 'Aferin!' },
+            vi: { lang: 'vi-VN', help: 'Tôi cần giúp đỡ ngay bây giờ!', greeting: 'Xin chào', goodJob: 'Làm tốt lắm!' }
+        };
+
+        const defaultData = {
+            profiles: [
+                {
+                    id: 'profile1',
+                    name: 'Default User',
+                    age: 10,
+                    vocabularyLevel: 'basic',
+                    customSettings: {}
+                }
+            ],
+            pages: {
+                main: {
+                    name: 'Main',
+                    symbols: [
+                        { id: 's1', text: 'I want', emoji: '🙋', category: 'needs' },
+                        { id: 's2', text: 'food', emoji: '🍎', category: 'needs' },
+                        { id: 's3', text: 'drink', emoji: '🥤', category: 'needs' },
+                        { id: 's4', text: 'bathroom', emoji: '🚽', category: 'needs' },
+                        { id: 's5', text: 'happy', emoji: '😊', category: 'feelings' },
+                        { id: 's6', text: 'sad', emoji: '😢', category: 'feelings' },
+                        { id: 's7', text: 'angry', emoji: '😠', category: 'feelings' },
+                        { id: 's8', text: 'tired', emoji: '😴', category: 'feelings' },
+                        { id: 's9', text: 'play', emoji: '🎮', category: 'activities' },
+                        { id: 's10', text: 'sleep', emoji: '🛏️', category: 'activities' },
+                        { id: 's11', text: 'yes', emoji: '✅', category: 'basic' },
+                        { id: 's12', text: 'no', emoji: '❌', category: 'basic' },
+                        { id: 's13', text: 'help', emoji: '🆘', category: 'basic' },
+                        { id: 's14', text: 'more', emoji: '➕', category: 'basic' },
+                        { id: 's15', text: 'finished', emoji: '✔️', category: 'basic' },
+                        { id: 's16', text: 'mom', emoji: '👩', category: 'people' },
+                        { id: 's17', text: 'dad', emoji: '👨', category: 'people' },
+                        { id: 's18', text: 'friend', emoji: '👦', category: 'people' }
+                    ]
+                },
+                feelings: {
+                    name: 'Feelings',
+                    symbols: [
+                        { id: 'f1', text: 'happy', emoji: '😊', category: 'feelings' },
+                        { id: 'f2', text: 'sad', emoji: '😢', category: 'feelings' },
+                        { id: 'f3', text: 'angry', emoji: '😠', category: 'feelings' },
+                        { id: 'f4', text: 'scared', emoji: '😨', category: 'feelings' },
+                        { id: 'f5', text: 'excited', emoji: '🤩', category: 'feelings' },
+                        { id: 'f6', text: 'confused', emoji: '😕', category: 'feelings' },
+                        { id: 'f7', text: 'proud', emoji: '😎', category: 'feelings' },
+                        { id: 'f8', text: 'worried', emoji: '😰', category: 'feelings' }
+                    ]
+                }
+            },
+            quickPhrases: [
+                { id: 'qp1', text: 'I need help', icon: '🆘' },
+                { id: 'qp2', text: 'I love you', icon: '❤️' },
+                { id: 'qp3', text: 'Thank you', icon: '🙏' },
+                { id: 'qp4', text: "I'm hungry", icon: '🍽️' },
+                { id: 'qp5', text: "I'm thirsty", icon: '💧' },
+                { id: 'qp6', text: "I'm in pain", icon: '🤕' },
+                { id: 'qp7', text: "I'm tired", icon: '😴' },
+                { id: 'qp8', text: "I want to go outside", icon: '🚪' }
+            ],
+            scheduleItems: [
+                { id: 'sch1', emoji: '🌅', text: 'Wake up', time: '7:00 AM', completed: false },
+                { id: 'sch2', emoji: '🍳', text: 'Breakfast', time: '7:30 AM', completed: false },
+                { id: 'sch3', emoji: '🚌', text: 'School', time: '8:30 AM', completed: false },
+                { id: 'sch4', emoji: '🍕', text: 'Lunch', time: '12:00 PM', completed: false },
+                { id: 'sch5', emoji: '🏠', text: 'Home', time: '3:00 PM', completed: false },
+                { id: 'sch6', emoji: '🎮', text: 'Play time', time: '4:00 PM', completed: false },
+                { id: 'sch7', emoji: '🍽️', text: 'Dinner', time: '6:00 PM', completed: false },
+                { id: 'sch8', emoji: '🛁', text: 'Bath', time: '7:30 PM', completed: false },
+                { id: 'sch9', emoji: '📚', text: 'Story time', time: '8:00 PM', completed: false },
+                { id: 'sch10', emoji: '🛏️', text: 'Bedtime', time: '8:30 PM', completed: false }
+            ],
+            choices: [
+                { id: 'ch1', question: 'What do you want to drink?', options: [
+                    { emoji: '🥛', text: 'Milk' },
+                    { emoji: '🧃', text: 'Juice' },
+                    { emoji: '💧', text: 'Water' }
+                ]},
+                { id: 'ch2', question: 'What do you want to eat?', options: [
+                    { emoji: '🍎', text: 'Apple' },
+                    { emoji: '🍌', text: 'Banana' },
+                    { emoji: '🍪', text: 'Cookie' }
+                ]},
+                { id: 'ch3', question: 'Where do you want to go?', options: [
+                    { emoji: '🏞️', text: 'Park' },
+                    { emoji: '🏪', text: 'Store' },
+                    { emoji: '🏠', text: 'Stay Home' }
+                ]}
+            ],
+            reminders: []
+        };
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+
+        function initApp() {
+            // Dark mode detection
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+
+            // Load saved data or use defaults
+            loadAppData();
+
+            // Load available voices
+            loadVoices();
+
+            // Initialize UI
+            renderProfiles();
+            renderSymbolGrid();
+            renderQuickPhrases();
+            renderSchedule();
+            renderChoices();
+            updateAnalytics();
+
+            // Set up event listeners
+            setupEventListeners();
+
+            // Check for reminders
+            checkReminders();
+            setInterval(checkReminders, 60000); // Check every minute
+        }
+
+        // ============================================
+        // VOICE AND LANGUAGE MANAGEMENT
+        // ============================================
+
+        function loadVoices() {
+            if ('speechSynthesis' in window) {
+                // Get voices (may need to wait for them to load)
+                const populateVoices = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    appState.availableVoices = voices;
+
+                    const voiceSelect = document.getElementById('voiceSelect');
+                    voiceSelect.innerHTML = '<option value="">Default Voice</option>';
+
+                    // Group voices by language
+                    const currentLang = appState.selectedLanguage;
+                    const langCode = translations[currentLang].lang;
+
+                    // Filter voices for current language
+                    const langVoices = voices.filter(voice => voice.lang.startsWith(langCode.split('-')[0]));
+                    const otherVoices = voices.filter(voice => !voice.lang.startsWith(langCode.split('-')[0]));
+
+                    // Add current language voices first
+                    if (langVoices.length > 0) {
+                        const langGroup = document.createElement('optgroup');
+                        langGroup.label = `${langCode} Voices`;
+                        langVoices.forEach((voice, index) => {
+                            const option = document.createElement('option');
+                            option.value = voice.name;
+                            option.textContent = `${voice.name} (${voice.lang})`;
+                            if (appState.selectedVoice === voice.name) {
+                                option.selected = true;
+                            }
+                            langGroup.appendChild(option);
+                        });
+                        voiceSelect.appendChild(langGroup);
+                    }
+
+                    // Add other voices
+                    if (otherVoices.length > 0) {
+                        const otherGroup = document.createElement('optgroup');
+                        otherGroup.label = 'Other Voices';
+                        otherVoices.slice(0, 20).forEach((voice) => {
+                            const option = document.createElement('option');
+                            option.value = voice.name;
+                            option.textContent = `${voice.name} (${voice.lang})`;
+                            if (appState.selectedVoice === voice.name) {
+                                option.selected = true;
+                            }
+                            otherGroup.appendChild(option);
+                        });
+                        voiceSelect.appendChild(otherGroup);
+                    }
+                };
+
+                // Voices may load asynchronously
+                if (window.speechSynthesis.getVoices().length > 0) {
+                    populateVoices();
+                }
+
+                window.speechSynthesis.onvoiceschanged = populateVoices;
+            }
+        }
+
+        function changeLanguage(langCode) {
+            appState.selectedLanguage = langCode;
+            document.documentElement.lang = langCode;
+
+            // Reload voices for new language
+            loadVoices();
+
+            saveAppData();
+        }
+
+        function loadAppData() {
+            // In iframe environment, we use in-memory storage
+            // Data persists during session and can be exported/imported via JSON files
+
+            // Set current profile
+            if (defaultData.profiles.length > 0 && !appState.currentProfile) {
+                appState.currentProfile = defaultData.profiles[0].id;
+            }
+        }
+
+        function saveAppData() {
+            // In iframe environment, data is kept in memory
+            // Users can use Export/Backup features to save their data permanently
+            console.log('App data updated in memory');
+        }
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+
+        function setupEventListeners() {
+            // Tab navigation
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+
+            // Message controls
+            document.getElementById('speakBtn').addEventListener('click', speakMessage);
+            document.getElementById('clearMessageBtn').addEventListener('click', clearMessage);
+            document.getElementById('messageArea').addEventListener('input', handleMessageInput);
+            document.getElementById('emergencyBtn').addEventListener('click', handleEmergency);
+
+            // Profile selection
+            document.getElementById('userProfileSelect').addEventListener('change', (e) => {
+                appState.currentProfile = e.target.value;
+                saveAppData();
+                renderSymbolGrid();
+            });
+
+            // Page selection
+            document.getElementById('pageSelect').addEventListener('change', (e) => {
+                appState.currentPage = e.target.value;
+                renderSymbolGrid();
+            });
+
+            // Language selection
+            document.getElementById('languageSelect').addEventListener('change', (e) => {
+                changeLanguage(e.target.value);
+            });
+
+            // Accessibility settings
+            document.getElementById('switchScanningToggle').addEventListener('change', toggleScanning);
+            document.getElementById('dwellTimeSlider').addEventListener('input', (e) => {
+                appState.dwellTime = parseFloat(e.target.value);
+                document.getElementById('dwellTimeValue').textContent = e.target.value;
+                saveAppData();
+            });
+            document.getElementById('voiceSpeedSlider').addEventListener('input', (e) => {
+                appState.voiceSpeed = parseFloat(e.target.value);
+                document.getElementById('voiceSpeedValue').textContent = e.target.value;
+                saveAppData();
+            });
+            document.getElementById('voicePitchSlider').addEventListener('input', (e) => {
+                appState.voicePitch = parseFloat(e.target.value);
+                document.getElementById('voicePitchValue').textContent = e.target.value;
+                saveAppData();
+            });
+            document.getElementById('voiceSelect').addEventListener('change', (e) => {
+                appState.selectedVoice = e.target.value;
+                saveAppData();
+                // Test the voice
+                speakText(translations[appState.selectedLanguage].greeting);
+            });
+            document.getElementById('symbolSizeSelect').addEventListener('change', (e) => {
+                appState.symbolSize = e.target.value;
+                renderSymbolGrid();
+                saveAppData();
+            });
+
+            // Settings buttons
+            document.getElementById('addProfileBtn').addEventListener('click', addProfile);
+            document.getElementById('customizeSymbolsBtn').addEventListener('click', customizeSymbols);
+            document.getElementById('customizePhrasesBtn').addEventListener('click', customizePhrases);
+            document.getElementById('remindersBtn').addEventListener('click', manageReminders);
+            document.getElementById('viewAnalyticsBtn').addEventListener('click', viewAnalytics);
+            document.getElementById('exportDataBtn').addEventListener('click', exportData);
+            document.getElementById('backupBtn').addEventListener('click', backupData);
+            document.getElementById('restoreBtn').addEventListener('click', restoreData);
+
+            // Schedule
+            document.getElementById('addScheduleItemBtn').addEventListener('click', addScheduleItem);
+
+            // Choices
+            document.getElementById('customChoiceBtn').addEventListener('click', createCustomChoice);
+
+            // Games
+            document.getElementById('matchGameCard').addEventListener('click', () => startGame('match'));
+            document.getElementById('feelingsGameCard').addEventListener('click', () => startGame('feelings'));
+            document.getElementById('closeGameBtn').addEventListener('click', closeGame);
+
+            // Keyboard support for accessibility
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+
+            // Update nav styling
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                if (tab.dataset.tab === tabName) {
+                    tab.classList.remove('border-transparent', 'text-gray-600', 'dark:text-gray-400');
+                    tab.classList.add('border-[#5D5CDE]', 'text-[#5D5CDE]');
+                } else {
+                    tab.classList.add('border-transparent', 'text-gray-600', 'dark:text-gray-400');
+                    tab.classList.remove('border-[#5D5CDE]', 'text-[#5D5CDE]');
+                }
+            });
+        }
+
+        // ============================================
+        // COMMUNICATION MODULE (Features 1-5)
+        // ============================================
+
+        function renderSymbolGrid() {
+            const grid = document.getElementById('symbolGrid');
+            const pageSelect = document.getElementById('pageSelect');
+            grid.innerHTML = '';
+
+            // Update page select
+            pageSelect.innerHTML = '';
+            Object.keys(defaultData.pages).forEach(pageKey => {
+                const option = document.createElement('option');
+                option.value = pageKey;
+                option.textContent = defaultData.pages[pageKey].name;
+                option.selected = pageKey === appState.currentPage;
+                pageSelect.appendChild(option);
+            });
+
+            const currentPageData = defaultData.pages[appState.currentPage];
+            if (!currentPageData) return;
+
+            const sizeClasses = {
+                small: 'text-2xl p-2',
+                medium: 'text-3xl p-3',
+                large: 'text-4xl p-4',
+                xlarge: 'text-5xl p-6'
+            };
+
+            currentPageData.symbols.forEach((symbol, index) => {
+                const button = document.createElement('button');
+                button.className = `symbol-button bg-white dark:bg-gray-700 rounded-lg shadow hover:shadow-lg flex flex-col items-center justify-center ${sizeClasses[appState.symbolSize]} border-2 border-gray-200 dark:border-gray-600`;
+                button.innerHTML = `
+                    <div class="text-4xl mb-1">${symbol.emoji}</div>
+                    <div class="text-sm font-medium text-gray-700 dark:text-gray-300">${symbol.text}</div>
+                `;
+                button.dataset.index = index;
+                button.addEventListener('click', () => addSymbolToMessage(symbol));
+                grid.appendChild(button);
+            });
+        }
+
+        function addSymbolToMessage(symbol) {
+            const messageArea = document.getElementById('messageArea');
+            appState.message = messageArea.value;
+            appState.message += (appState.message ? ' ' : '') + symbol.text;
+            messageArea.value = appState.message;
+
+            logUsage('symbol_used', symbol.text);
+            updateWordPrediction();
+
+            // Visual feedback
+            speakWord(symbol.text);
+        }
+
+        function renderQuickPhrases() {
+            const container = document.getElementById('quickPhrasesContainer');
+            container.innerHTML = '';
+
+            defaultData.quickPhrases.forEach(phrase => {
+                const button = document.createElement('button');
+                button.className = 'bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 flex items-center space-x-2 font-medium';
+                button.innerHTML = `
+                    <span class="text-2xl">${phrase.icon}</span>
+                    <span class="text-base">${phrase.text}</span>
+                `;
+                button.addEventListener('click', () => {
+                    document.getElementById('messageArea').value = phrase.text;
+                    appState.message = phrase.text;
+                    speakMessage();
+                    logUsage('quick_phrase', phrase.text);
+                });
+                container.appendChild(button);
+            });
+        }
+
+        function handleMessageInput(e) {
+            appState.message = e.target.value;
+            updateWordPrediction();
+        }
+
+        function updateWordPrediction() {
+            const predictionBar = document.getElementById('predictionBar');
+            const message = appState.message.toLowerCase();
+            const words = message.split(' ');
+            const lastWord = words[words.length - 1];
+
+            const commonWords = ['I', 'want', 'need', 'feel', 'like', 'have', 'go', 'see', 'can', 'help', 'please', 'thank', 'you', 'the', 'to', 'and'];
+
+            const predictions = commonWords
+                .filter(word => word.toLowerCase().startsWith(lastWord) && word.toLowerCase() !== lastWord)
+                .slice(0, 5);
+
+            predictionBar.innerHTML = '';
+            predictions.forEach(word => {
+                const button = document.createElement('button');
+                button.className = 'px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 text-base';
+                button.textContent = word;
+                button.addEventListener('click', () => {
+                    words[words.length - 1] = word;
+                    appState.message = words.join(' ') + ' ';
+                    document.getElementById('messageArea').value = appState.message;
+                    updateWordPrediction();
+                });
+                predictionBar.appendChild(button);
+            });
+        }
+
+        function speakMessage() {
+            const message = document.getElementById('messageArea').value;
+            if (message.trim()) {
+                speakText(message);
+                logUsage('message_spoken', message);
+            }
+        }
+
+        function speakWord(word) {
+            speakText(word);
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = appState.voiceSpeed;
+                utterance.pitch = appState.voicePitch;
+
+                // Set language
+                const langCode = translations[appState.selectedLanguage].lang;
+                utterance.lang = langCode;
+
+                // Set voice if one is selected
+                if (appState.selectedVoice) {
+                    const voice = appState.availableVoices.find(v => v.name === appState.selectedVoice);
+                    if (voice) {
+                        utterance.voice = voice;
+                    }
+                } else {
+                    // Try to find a voice for the selected language
+                    const langPrefix = langCode.split('-')[0];
+                    const voice = appState.availableVoices.find(v => v.lang.startsWith(langPrefix));
+                    if (voice) {
+                        utterance.voice = voice;
+                    }
+                }
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function clearMessage() {
+            document.getElementById('messageArea').value = '';
+            appState.message = '';
+            document.getElementById('predictionBar').innerHTML = '';
+        }
+
+        function handleEmergency() {
+            const emergencyMessage = translations[appState.selectedLanguage].help;
+            speakText(emergencyMessage);
+            logUsage('emergency', emergencyMessage);
+            showCustomAlert('Emergency Alert', 'Emergency message has been spoken. Additional help features can be configured in settings.');
+        }
+
+        // ============================================
+        // VISUAL SCHEDULES (Feature 9)
+        // ============================================
+
+        function renderSchedule() {
+            const container = document.getElementById('scheduleContainer');
+            container.innerHTML = '';
+
+            defaultData.scheduleItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = `flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    item.completed
+                        ? 'bg-green-50 dark:bg-green-900 border-green-500'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                }`;
+
+                div.innerHTML = `
+                    <div class="text-4xl mr-4">${item.emoji}</div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-lg ${item.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'}">${item.text}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">${item.time}</div>
+                    </div>
+                    <div class="text-2xl">
+                        ${item.completed ? '✅' : '⭕'}
+                    </div>
+                `;
+
+                div.addEventListener('click', () => toggleScheduleItem(index));
+                container.appendChild(div);
+            });
+
+            updateScheduleProgress();
+        }
+
+        function toggleScheduleItem(index) {
+            defaultData.scheduleItems[index].completed = !defaultData.scheduleItems[index].completed;
+
+            if (defaultData.scheduleItems[index].completed) {
+                const congratsMsg = `${translations[appState.selectedLanguage].goodJob} ${defaultData.scheduleItems[index].text} completed!`;
+                speakText(congratsMsg);
+                logUsage('schedule_completed', defaultData.scheduleItems[index].text);
+
+                // Award points
+                appState.gamePoints += 10;
+                document.getElementById('totalPoints').textContent = appState.gamePoints;
+                showCustomAlert('Well Done! 🎉', 'You earned 10 points for completing this task!');
+            }
+
+            renderSchedule();
+            saveAppData();
+        }
+
+        function updateScheduleProgress() {
+            const completed = defaultData.scheduleItems.filter(item => item.completed).length;
+            const total = defaultData.scheduleItems.length;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('scheduleProgress').textContent = `${percentage}%`;
+            document.getElementById('scheduleProgressBar').style.width = `${percentage}%`;
+        }
+
+        function addScheduleItem() {
+            showCustomPrompt('Add Schedule Item', 'Enter task name:', (taskName) => {
+                if (taskName) {
+                    showCustomPrompt('Set Time', 'Enter time (e.g., 9:00 AM):', (time) => {
+                        if (time) {
+                            const newItem = {
+                                id: `sch${Date.now()}`,
+                                emoji: '📝',
+                                text: taskName,
+                                time: time,
+                                completed: false
+                            };
+                            defaultData.scheduleItems.push(newItem);
+                            renderSchedule();
+                            saveAppData();
+                        }
+                    });
+                }
+            });
+        }
+
+        // ============================================
+        // CHOICE MAKING (Feature 10)
+        // ============================================
+
+        function renderChoices() {
+            const container = document.getElementById('choicesContainer');
+            container.innerHTML = '';
+
+            defaultData.choices.forEach(choice => {
+                const div = document.createElement('div');
+                div.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4';
+
+                let html = `<h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">${choice.question}</h3>`;
+                html += '<div class="space-y-2">';
+
+                choice.options.forEach(option => {
+                    html += `
+                        <button class="choice-option w-full p-4 bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-lg flex items-center space-x-3 text-left transition-all">
+                            <span class="text-3xl">${option.emoji}</span>
+                            <span class="text-lg font-medium text-gray-900 dark:text-white">${option.text}</span>
+                        </button>
+                    `;
+                });
+
+                html += '</div>';
+                div.innerHTML = html;
+
+                div.querySelectorAll('.choice-option').forEach((btn, idx) => {
+                    btn.addEventListener('click', () => {
+                        const selectedOption = choice.options[idx];
+                        speakText(`I choose ${selectedOption.text}`);
+                        logUsage('choice_made', selectedOption.text);
+                        showCustomAlert('Choice Made', `You selected: ${selectedOption.text}`);
+                    });
+                });
+
+                container.appendChild(div);
+            });
+        }
+
+        function createCustomChoice() {
+            showCustomPrompt('Create Choice', 'Enter your question:', (question) => {
+                if (question) {
+                    const newChoice = {
+                        id: `ch${Date.now()}`,
+                        question: question,
+                        options: [
+                            { emoji: '1️⃣', text: 'Option 1' },
+                            { emoji: '2️⃣', text: 'Option 2' }
+                        ]
+                    };
+                    defaultData.choices.push(newChoice);
+                    renderChoices();
+                    saveAppData();
+                }
+            });
+        }
+
+        // ============================================
+        // GAMIFICATION (Feature 12)
+        // ============================================
+
+        function startGame(gameType) {
+            const gameArea = document.getElementById('gameArea');
+            const gameContent = document.getElementById('gameContent');
+            const gameTitle = document.getElementById('gameTitle');
+
+            gameArea.classList.remove('hidden');
+
+            if (gameType === 'match') {
+                gameTitle.textContent = '🎯 Symbol Match Game';
+                renderMatchGame(gameContent);
+            } else if (gameType === 'feelings') {
+                gameTitle.textContent = '😊 Feelings Quiz';
+                renderFeelingsGame(gameContent);
+            }
+        }
+
+        function renderMatchGame(container) {
+            const symbols = defaultData.pages.main.symbols.slice(0, 6);
+            const shuffled = [...symbols].sort(() => Math.random() - 0.5);
+
+            let currentSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+
+            container.innerHTML = `
+                <div class="text-center mb-6">
+                    <p class="text-lg mb-4 text-gray-900 dark:text-white">Find the symbol for: <strong>"${currentSymbol.text}"</strong></p>
+                    <div class="grid grid-cols-3 gap-3">
+                        ${shuffled.map(symbol => `
+                            <button class="game-symbol-btn p-6 bg-white dark:bg-gray-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 text-5xl" data-text="${symbol.text}">
+                                ${symbol.emoji}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            container.querySelectorAll('.game-symbol-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (btn.dataset.text === currentSymbol.text) {
+                        appState.gamePoints += 20;
+                        document.getElementById('totalPoints').textContent = appState.gamePoints;
+                        speakText('Correct! Great job!');
+                        showCustomAlert('Correct! 🎉', 'You earned 20 points!');
+                        saveAppData();
+                        // Start new round
+                        setTimeout(() => renderMatchGame(container), 1500);
+                    } else {
+                        speakText('Try again!');
+                        btn.classList.add('opacity-50');
+                    }
+                });
+            });
+        }
+
+        function renderFeelingsGame(container) {
+            const feelings = [
+                { emoji: '😊', text: 'happy' },
+                { emoji: '😢', text: 'sad' },
+                { emoji: '😠', text: 'angry' },
+                { emoji: '😨', text: 'scared' }
+            ];
+
+            const currentFeeling = feelings[Math.floor(Math.random() * feelings.length)];
+
+            container.innerHTML = `
+                <div class="text-center mb-6">
+                    <div class="text-8xl mb-4">${currentFeeling.emoji}</div>
+                    <p class="text-lg mb-4 text-gray-900 dark:text-white">How is this person feeling?</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        ${feelings.map(feeling => `
+                            <button class="feelings-btn p-4 bg-white dark:bg-gray-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 text-lg font-medium text-gray-900 dark:text-white" data-feeling="${feeling.text}">
+                                ${feeling.text}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            container.querySelectorAll('.feelings-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (btn.dataset.feeling === currentFeeling.text) {
+                        appState.gamePoints += 15;
+                        document.getElementById('totalPoints').textContent = appState.gamePoints;
+                        speakText('Excellent! You identified the feeling correctly!');
+                        showCustomAlert('Excellent! 🌟', 'You earned 15 points!');
+                        saveAppData();
+                        setTimeout(() => renderFeelingsGame(container), 1500);
+                    } else {
+                        speakText('Not quite. Try again!');
+                        btn.classList.add('opacity-50');
+                    }
+                });
+            });
+        }
+
+        function closeGame() {
+            document.getElementById('gameArea').classList.add('hidden');
+        }
+
+        // ============================================
+        // USER PROFILES (Feature 6)
+        // ============================================
+
+        function renderProfiles() {
+            const container = document.getElementById('profilesContainer');
+            const select = document.getElementById('userProfileSelect');
+
+            container.innerHTML = '';
+            select.innerHTML = '<option value="">Select Profile</option>';
+
+            defaultData.profiles.forEach(profile => {
+                // Profile card
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg';
+                div.innerHTML = `
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white">${profile.name}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Age: ${profile.age} | Level: ${profile.vocabularyLevel}</div>
+                    </div>
+                    <button class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 delete-profile-btn" data-id="${profile.id}">Delete</button>
+                `;
+                container.appendChild(div);
+
+                // Select option
+                const option = document.createElement('option');
+                option.value = profile.id;
+                option.textContent = profile.name;
+                option.selected = profile.id === appState.currentProfile;
+                select.appendChild(option);
+            });
+
+            // Delete button handlers
+            container.querySelectorAll('.delete-profile-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.target.dataset.id;
+                    deleteProfile(id);
+                });
+            });
+        }
+
+        function addProfile() {
+            showCustomPrompt('New Profile', 'Enter name:', (name) => {
+                if (name) {
+                    showCustomPrompt('Age', 'Enter age:', (age) => {
+                        if (age) {
+                            const newProfile = {
+                                id: `profile${Date.now()}`,
+                                name: name,
+                                age: parseInt(age) || 0,
+                                vocabularyLevel: 'basic',
+                                customSettings: {}
+                            };
+                            defaultData.profiles.push(newProfile);
+                            renderProfiles();
+                            saveAppData();
+                        }
+                    });
+                }
+            });
+        }
+
+        function deleteProfile(id) {
+            showCustomConfirm('Delete Profile', 'Are you sure you want to delete this profile?', () => {
+                defaultData.profiles = defaultData.profiles.filter(p => p.id !== id);
+                if (appState.currentProfile === id) {
+                    appState.currentProfile = defaultData.profiles[0]?.id || null;
+                }
+                renderProfiles();
+                saveAppData();
+            });
+        }
+
+        // ============================================
+        // CUSTOMIZATION (Feature 7)
+        // ============================================
+
+        function customizeSymbols() {
+            showCustomAlert('Customize Symbols', 'This feature allows you to add custom symbols and create new pages. You can add personal photos and custom labels for each symbol.');
+        }
+
+        function customizePhrases() {
+            showCustomPrompt('Add Quick Phrase', 'Enter your phrase:', (phrase) => {
+                if (phrase) {
+                    const newPhrase = {
+                        id: `qp${Date.now()}`,
+                        text: phrase,
+                        icon: '💬'
+                    };
+                    defaultData.quickPhrases.push(newPhrase);
+                    renderQuickPhrases();
+                    saveAppData();
+                }
+            });
+        }
+
+        // ============================================
+        // REMINDERS (Feature 11)
+        // ============================================
+
+        function manageReminders() {
+            showCustomAlert('Reminders', 'Set up reminders for medications, appointments, and daily tasks. Reminders will appear at scheduled times with visual and audio notifications.');
+        }
+
+        function checkReminders() {
+            const now = new Date();
+            defaultData.reminders.forEach(reminder => {
+                // Check if reminder time matches current time
+                // This is a simplified version - you'd want more robust time checking
+                if (reminder.enabled && !reminder.shown) {
+                    showCustomAlert('Reminder', reminder.message);
+                    speakText(reminder.message);
+                    reminder.shown = true;
+                }
+            });
+        }
+
+        // ============================================
+        // ACCESSIBILITY (Feature 8)
+        // ============================================
+
+        function toggleScanning(e) {
+            appState.scanningEnabled = e.target.checked;
+
+            if (appState.scanningEnabled) {
+                startScanning();
+            } else {
+                stopScanning();
+            }
+
+            saveAppData();
+        }
+
+        function startScanning() {
+            const symbols = document.querySelectorAll('.symbol-button');
+            if (symbols.length === 0) return;
+
+            appState.scanningIndex = 0;
+
+            appState.scanningInterval = setInterval(() => {
+                symbols.forEach(s => s.classList.remove('scanning-highlight'));
+                symbols[appState.scanningIndex].classList.add('scanning-highlight');
+
+                appState.scanningIndex = (appState.scanningIndex + 1) % symbols.length;
+            }, appState.dwellTime * 1000);
+        }
+
+        function stopScanning() {
+            if (appState.scanningInterval) {
+                clearInterval(appState.scanningInterval);
+                document.querySelectorAll('.symbol-button').forEach(s => s.classList.remove('scanning-highlight'));
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (appState.scanningEnabled && e.code === 'Space') {
+                e.preventDefault();
+                const highlighted = document.querySelector('.scanning-highlight');
+                if (highlighted) {
+                    highlighted.click();
+                }
+            }
+        }
+
+        // ============================================
+        // DATA LOGGING & ANALYTICS (Feature 14)
+        // ============================================
+
+        function logUsage(type, data) {
+            appState.usageLog.push({
+                timestamp: new Date().toISOString(),
+                type: type,
+                data: data
+            });
+
+            // Keep only last 1000 entries
+            if (appState.usageLog.length > 1000) {
+                appState.usageLog = appState.usageLog.slice(-1000);
+            }
+
+            updateAnalytics();
+            saveAppData();
+        }
+
+        function updateAnalytics() {
+            const totalMessages = appState.usageLog.filter(log => log.type === 'message_spoken').length;
+            document.getElementById('totalMessages').textContent = totalMessages;
+
+            // Find most used symbol
+            const symbolUsage = {};
+            appState.usageLog.filter(log => log.type === 'symbol_used').forEach(log => {
+                symbolUsage[log.data] = (symbolUsage[log.data] || 0) + 1;
+            });
+
+            const mostUsed = Object.entries(symbolUsage).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('mostUsedSymbol').textContent = mostUsed ? mostUsed[0] : '-';
+        }
+
+        function viewAnalytics() {
+            const totalMessages = appState.usageLog.filter(log => log.type === 'message_spoken').length;
+            const totalSymbols = appState.usageLog.filter(log => log.type === 'symbol_used').length;
+            const totalChoices = appState.usageLog.filter(log => log.type === 'choice_made').length;
+
+            showCustomAlert('Usage Analytics', `
+                <div class="space-y-2 text-left">
+                    <p><strong>Total Messages:</strong> ${totalMessages}</p>
+                    <p><strong>Total Symbol Uses:</strong> ${totalSymbols}</p>
+                    <p><strong>Total Choices Made:</strong> ${totalChoices}</p>
+                    <p><strong>Game Points:</strong> ${appState.gamePoints}</p>
+                    <p><strong>Schedule Completion:</strong> ${defaultData.scheduleItems.filter(i => i.completed).length}/${defaultData.scheduleItems.length}</p>
+                </div>
+            `);
+        }
+
+        // ============================================
+        // BACKUP & RESTORE (Feature 15)
+        // ============================================
+
+        function exportData() {
+            const dataStr = JSON.stringify({
+                data: defaultData,
+                state: appState,
+                exportDate: new Date().toISOString()
+            }, null, 2);
+
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `aac-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showCustomAlert('Export Complete', 'Your data has been exported successfully!');
+        }
+
+        function backupData() {
+            // In iframe environment, we download the backup as a JSON file
+            const backupData = {
+                data: defaultData,
+                state: appState,
+                timestamp: new Date().toISOString()
+            };
+
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `aac-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showCustomAlert('Backup Complete', 'Your data has been downloaded as a JSON file. Keep this file safe to restore your data later!');
+        }
+
+        function restoreData() {
+            // Create file input for restore
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const backupData = JSON.parse(event.target.result);
+
+                            showCustomConfirm('Restore Data', 'This will replace your current data. Continue?', () => {
+                                Object.assign(defaultData, backupData.data);
+                                Object.assign(appState, backupData.state);
+
+                                renderProfiles();
+                                renderSymbolGrid();
+                                renderQuickPhrases();
+                                renderSchedule();
+                                renderChoices();
+                                updateAnalytics();
+
+                                showCustomAlert('Restore Complete', 'Your data has been restored successfully!');
+                            });
+                        } catch (error) {
+                            showCustomAlert('Restore Failed', 'The backup file is invalid or corrupted. Please try a different file.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        // ============================================
+        // CUSTOM MODAL FUNCTIONS (NO alert/confirm/prompt)
+        // ============================================
+
+        function showCustomAlert(title, message, callback) {
+            const modal = document.getElementById('customModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalButtons = document.getElementById('modalButtons');
+
+            modalTitle.textContent = title;
+            modalContent.innerHTML = message;
+            modalButtons.innerHTML = `
+                <button class="px-4 py-2 bg-[#5D5CDE] text-white rounded-lg hover:bg-[#4a4bc5]" id="modalOkBtn">OK</button>
+            `;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            document.getElementById('modalOkBtn').onclick = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                if (callback) callback();
+            };
+        }
+
+        function showCustomConfirm(title, message, onConfirm) {
+            const modal = document.getElementById('customModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalButtons = document.getElementById('modalButtons');
+
+            modalTitle.textContent = title;
+            modalContent.innerHTML = message;
+            modalButtons.innerHTML = `
+                <button class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600" id="modalCancelBtn">Cancel</button>
+                <button class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600" id="modalConfirmBtn">Confirm</button>
+            `;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            document.getElementById('modalCancelBtn').onclick = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+
+            document.getElementById('modalConfirmBtn').onclick = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                if (onConfirm) onConfirm();
+            };
+        }
+
+        function showCustomPrompt(title, message, onSubmit) {
+            const modal = document.getElementById('customModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalButtons = document.getElementById('modalButtons');
+
+            modalTitle.textContent = title;
+            modalContent.innerHTML = `
+                <p class="mb-3">${message}</p>
+                <input type="text" id="modalInput" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-base bg-white dark:bg-gray-700 dark:text-white" autofocus>
+            `;
+            modalButtons.innerHTML = `
+                <button class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600" id="modalCancelBtn">Cancel</button>
+                <button class="px-4 py-2 bg-[#5D5CDE] text-white rounded-lg hover:bg-[#4a4bc5]" id="modalSubmitBtn">Submit</button>
+            `;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const input = document.getElementById('modalInput');
+            input.focus();
+
+            const submitHandler = () => {
+                const value = input.value.trim();
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                if (value && onSubmit) onSubmit(value);
+            };
+
+            document.getElementById('modalCancelBtn').onclick = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+
+            document.getElementById('modalSubmitBtn').onclick = submitHandler;
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') submitHandler();
+            });
+        }
+
+        // ============================================
+        // START APP
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

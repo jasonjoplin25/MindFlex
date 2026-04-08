@@ -1,0 +1,18 @@
+-- Cognitive assessments are stored in the existing 'assessments' table
+-- (app/models/assessment.py) using assessment_type = 'cognitive_screening'.
+--
+-- The 'results' JSONB column stores:
+--   {
+--     "scores": {
+--       "memory": 80,
+--       "attention": 65,
+--       "processing-speed": 70,
+--       "reasoning": 75
+--     },
+--     "raw_results": { ... }   -- per-test raw data for future analysis
+--   }
+--
+-- The 'score' column stores the overall average (0-100).
+--
+-- No schema changes are needed — the existing table already supports this.
+-- Run existing migrations: flask db upgrade

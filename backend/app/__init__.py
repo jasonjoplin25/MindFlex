@@ -1,0 +1,1 @@
+# MindFlex backend app package initialization 
